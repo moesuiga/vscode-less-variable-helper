@@ -40,5 +40,8 @@
     "postcss-less": "^3.1.4",
     "postcss-safe-parser": "^4.0.1"
   },
+  "repository": {
+    "url": "git@github.com:moesuiga/vscode-less-variable-helper.git"
+  },
   "publisher": "double"
 }
