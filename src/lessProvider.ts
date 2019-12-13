@@ -19,7 +19,7 @@ class LessProvider implements CompletionItemProvider {
       return [];
     }
 
-    const items = lessCompletion.collect(textDoc.fileName);
+    const items = lessCompletion.collectImportFiles(textDoc.fileName);
 
     return items;
     // return items.concat(...store.values());

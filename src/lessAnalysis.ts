@@ -52,7 +52,7 @@ function getLessFileAssociations() {
   if (!extArray.includes('less')) {
     extArray.push('less');
   }
-  return extArray;
+  return [...new Set(extArray)];
 }
 
 

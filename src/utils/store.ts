@@ -1,9 +1,9 @@
 import * as fs from 'fs';
-import { parser } from './parser';
+import { parser, IPostCssParseNode } from './parser';
 import { error } from './log';
 
 class FileStore {
-  private _store = new Map();
+  private _store = new Map<string, IPostCssParseNode>();
 
   get size() {
     return this._store.size;

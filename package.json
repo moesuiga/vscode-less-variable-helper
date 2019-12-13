@@ -36,6 +36,8 @@
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
-		"postcss": "^7.0.24"
+		"postcss": "^7.0.24",
+		"postcss-less": "^3.1.4",
+		"postcss-safe-parser": "^4.0.1"
 	}
 }
