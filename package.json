@@ -1,43 +1,44 @@
 {
-	"name": "less-variable-helper",
-	"displayName": "less-variable-helper",
-	"description": "引入less文件的变量提示帮助",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.41.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onLanguage:less"
-	],
-	"main": "./out/extension.js",
-	"contributes": {},
-	"scripts": {
-		"vscode:prepublish": "yarn run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "yarn run compile",
-		"test": "node ./out/test/runTest.js",
-		"lint": "tslint --fix -p tsconfig.json",
-		"version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^5.2.7",
-		"@types/node": "^12.11.7",
-		"@types/vscode": "^1.41.0",
-		"conventional-changelog-cli": "^2.0.28",
-		"glob": "^7.1.5",
-		"mocha": "^6.2.2",
-		"tslint": "^5.20.0",
-		"typescript": "^3.6.4",
-		"vscode-test": "^1.2.2"
-	},
-	"dependencies": {
-		"postcss": "^7.0.24",
-		"postcss-less": "^3.1.4",
-		"postcss-safe-parser": "^4.0.1"
-	}
+  "name": "less-variable-helper",
+  "displayName": "less-variable-helper",
+  "description": "引入less文件的变量提示帮助",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.41.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:less"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {},
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "yarn run compile",
+    "test": "node ./out/test/runTest.js",
+    "lint": "tslint --fix -p tsconfig.json",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.11.7",
+    "@types/vscode": "^1.41.0",
+    "conventional-changelog-cli": "^2.0.28",
+    "glob": "^7.1.5",
+    "mocha": "^6.2.2",
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.4",
+    "vscode-test": "^1.2.2"
+  },
+  "dependencies": {
+    "postcss": "^7.0.24",
+    "postcss-less": "^3.1.4",
+    "postcss-safe-parser": "^4.0.1"
+  },
+  "publisher": "double"
 }
