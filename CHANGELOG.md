@@ -1,9 +1,10 @@
-# Change Log
+## 0.0.1 (2019-12-13)
 
-All notable changes to the "less-variable-helper" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+### Features
 
-## [Unreleased]
+* 只提示通过 `@import` 引入的less文件中的变量 143b23b
+* 监视工作区less文件，提取外层变量 f121f4a
 
-- Initial release
+
+
