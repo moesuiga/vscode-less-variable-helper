@@ -67,7 +67,7 @@ class LessCompletions {
         const item = new CompletionItem(`@${label}`, CompletionItemKind.Variable);
         item.detail = relativePath;
         item.insertText = label;
-        item.filterText = `@${label}`;
+        item.filterText = label;
         item.documentation = node.params;
         items.push(item);
       }
