@@ -5,7 +5,7 @@ import { log } from './utils/log';
 import { IPostCssParseNode } from './utils/parser';
 
 /**
- * @see https://developer.mozilla.org/zh-CN/docs/Web/CSS/At-rule
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/At-rule
  */
 const primitiveAtRules = [
   'charset',
@@ -17,6 +17,20 @@ const primitiveAtRules = [
   'font-face',
   'supports',
   'document',
+  'counter-style',
+  'viewport',
+  '-ms-viewport',
+  '-moz-document',
+  '-moz-keyframes',
+  '-o-keyframes',
+  '-webkit-keyframes',
+  'font-feature-values',
+  'swash',
+  'ornaments',
+  'annotation',
+  'stylistic',
+  'styleset',
+  'character-variant',
 ];
 
 class LessCompletions {
