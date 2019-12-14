@@ -13,7 +13,6 @@
     "onLanguage:less"
   ],
   "main": "./out/extension.js",
-  "contributes": {},
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
@@ -41,7 +40,9 @@
     "postcss-safe-parser": "^4.0.1"
   },
   "repository": {
-    "url": "git@github.com:moesuiga/vscode-less-variable-helper.git"
+    "url": "https://github.com/moesuiga/vscode-less-variable-helper.git",
+    "type": "git"
   },
+  "homepage": "https://github.com/moesuiga/vscode-less-variable-helper",
   "publisher": "double"
 }
