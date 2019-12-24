@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind, TextEdit, Range, Position, window, commands } from 'vscode';
+import { CompletionItem, CompletionItemKind } from 'vscode';
 import * as path from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
@@ -98,7 +98,7 @@ class LessCompletions {
    * @param node
    */
   private _lessFunction(node: IPostCssParseNode, relativePath: string) {
-    const funcReg = /^\.(\w+)\s*\(((?:\s*@\w+\s*(?:\:\s*[^)@,]+)?,?)*)\)$/;
+    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?$/;
     const funcValuesReg = /(@\w+)\s*(?:\:\s*([^)@,]+))?/g;
 
     if (
@@ -108,7 +108,16 @@ class LessCompletions {
     ) {
       return null;
     }
-    const label = (node.selector.match(funcReg) as RegExpMatchArray)[1];
+    const [, label, params] = node.selector.match(funcReg) as RegExpMatchArray;
+
+    const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
+    item.detail = relativePath;
+    item.filterText = label;
+    if (!params) {
+      item.insertText = `${label};`;
+      item.documentation = `.${label};`;
+      return item;
+    }
 
     let matches: RegExpExecArray | null;
     const args = [];
@@ -120,11 +129,7 @@ class LessCompletions {
     const insertStr = args.map(([k,v]) => k).join(', ');
 
     const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
-
-    const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
-    item.detail = relativePath;
-    item.insertText = `${label}(${insertStr})`;
-    item.filterText = label;
+    item.insertText = `${label}(${insertStr});`;
     item.documentation = `.${label} (${paramStr})`;
     return item;
   }
