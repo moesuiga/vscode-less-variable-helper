@@ -1,3 +1,12 @@
+## [0.0.4](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.3...v0.0.4) (2019-12-24)
+
+
+### Features
+
+* 增加函数名提示 ([28298b9](https://github.com/moesuiga/vscode-less-variable-helper/commit/28298b9a59d75b42d6458ef743dd8e0c56fa50eb))
+
+
+
 ## [0.0.3](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.2...v0.0.3) (2019-12-14)
 
 
