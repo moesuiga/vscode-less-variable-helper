@@ -1,3 +1,12 @@
+## [0.0.5](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.4...v0.0.5) (2019-12-24)
+
+
+### Bug Fixes
+
+* 修复函数提示 ([541833a](https://github.com/moesuiga/vscode-less-variable-helper/commit/541833aa64840bf7e6de3cf7f3b172890679699f))
+
+
+
 ## [0.0.4](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.3...v0.0.4) (2019-12-24)
 
 
