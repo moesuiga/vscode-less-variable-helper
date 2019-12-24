@@ -12,9 +12,36 @@ interface IAnyObject {
 
 export interface IPostCssParseNode extends IAnyObject {
   type: string;
-  name: string;
-  params: string;
-  nodes: IPostCssParseNode[];
+  /**
+   * type: 'atrule'
+   * rule name
+   */
+  name?: string;
+  /**
+   * type: 'atrule'
+   * @rule params, like @import "path/to/file" or @keyframes animal
+   */
+  params?: string;
+
+  nodes?: IPostCssParseNode[];
+
+  /**
+   * type: 'rule'
+   *
+   * selector
+   */
+  selector?: string;
+
+  /**
+   * type: 'decl'
+   * CSS 属性
+   */
+  prop?: string;
+  /**
+   * type: 'decl'
+   * CSS 属性值
+   */
+  value?: string;
 }
 
 export async function parser(filePath: string): Promise<IPostCssParseNode | void> {

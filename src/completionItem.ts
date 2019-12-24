@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind } from 'vscode';
+import { CompletionItem, CompletionItemKind, TextEdit, Range, Position, window, commands } from 'vscode';
 import * as path from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
@@ -40,9 +40,9 @@ class LessCompletions {
     }
     const currentRootNode = fileStore.get(filePath)!;
     const dirPath = path.dirname(filePath);
-    const importFiles = currentRootNode.nodes
+    const importFiles = currentRootNode.nodes!
       .reduce((files, node) => {
-        if (node.type === 'atrule' && node.name === 'import') {
+        if (node.type === 'atrule' && node.name === 'import' && node.params) {
           const matchArray = /(['"])([^'"]+)\1/.exec(node.params);
           if (matchArray) {
             files.push(matchArray[2]);
@@ -58,21 +58,75 @@ class LessCompletions {
 
   private getLessVariable(root: IPostCssParseNode, relativePath: string) {
     const items: CompletionItem[] = [];
-    root.nodes.forEach((node) => {
-      if (node.type === 'atrule' && !primitiveAtRules.includes(node.name)) {
-        let label = node.name;
-        if (label.slice(-1) === ':') {
-          label = label.slice(0, -1);
-        }
-        const item = new CompletionItem(`@${label}`, CompletionItemKind.Variable);
-        item.detail = relativePath;
-        item.insertText = label;
-        item.filterText = label;
-        item.documentation = node.params;
-        items.push(item);
+    root.nodes!.forEach((node) => {
+      const variableItem = this._lessVariable(node, relativePath);
+      const funcItem = this._lessFunction(node, relativePath);
+      if (variableItem) {
+        items.push(variableItem);
+      }
+      if (funcItem) {
+        items.push(funcItem);
       }
     });
     return items;
+  }
+
+  private _lessVariable(node: IPostCssParseNode, relativePath: string) {
+    if (
+      node.type !== 'atrule' ||
+      !node.name ||
+      primitiveAtRules.includes(node.name)
+    ) {
+      return null;
+    }
+    let label = node.name;
+    if (label.slice(-1) === ':') {
+      label = label.slice(0, -1);
+    }
+    const item = new CompletionItem(`@${label}`, CompletionItemKind.Variable);
+    item.detail = relativePath;
+    item.insertText = label;
+    item.filterText = label;
+    item.documentation = node.params;
+    return item;
+  }
+
+  /**
+   * less class function
+   *
+   * like `.ellipsis(@width)`
+   * @param node
+   */
+  private _lessFunction(node: IPostCssParseNode, relativePath: string) {
+    const funcReg = /^\.(\w+)\s*\(((?:\s*@\w+\s*(?:\:\s*[^)@,]+)?,?)*)\)$/;
+    const funcValuesReg = /(@\w+)\s*(?:\:\s*([^)@,]+))?/g;
+
+    if (
+      node.type !== 'rule' ||
+      !node.selector ||
+      !funcReg.test(node.selector)
+    ) {
+      return null;
+    }
+    const label = (node.selector.match(funcReg) as RegExpMatchArray)[1];
+
+    let matches: RegExpExecArray | null;
+    const args = [];
+    while (matches = funcValuesReg.exec(node.selector)) {
+      const [, name, value] = matches;
+      args.push([name, value]);
+    }
+
+    const insertStr = args.map(([k,v]) => k).join(', ');
+
+    const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
+
+    const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
+    item.detail = relativePath;
+    item.insertText = `${label}(${insertStr})`;
+    item.filterText = label;
+    item.documentation = `.${label} (${paramStr})`;
+    return item;
   }
 
   collectImportFiles(filePath: string) {
