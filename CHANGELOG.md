@@ -1,3 +1,12 @@
+## [0.0.6](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.5...v0.0.6) (2020-05-20)
+
+
+### Bug Fixes
+
+* 修复输入 `@` 符号时无变量提示 ([8608408](https://github.com/moesuiga/vscode-less-variable-helper/commit/8608408dd4d544484e2f170a01970d82fd28811e))
+
+
+
 ## [0.0.5](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.4...v0.0.5) (2019-12-24)
 
 
