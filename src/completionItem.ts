@@ -85,8 +85,8 @@ class LessCompletions {
     }
     const item = new CompletionItem(`@${label}`, CompletionItemKind.Variable);
     item.detail = relativePath;
-    item.insertText = label;
-    item.filterText = label;
+    item.insertText = `@${label}`;
+    item.filterText = `@${label}`;
     item.documentation = node.params;
     return item;
   }
@@ -112,9 +112,9 @@ class LessCompletions {
 
     const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
     item.detail = relativePath;
-    item.filterText = label;
+    item.filterText = `.${label}`;
     if (!params) {
-      item.insertText = `${label};`;
+      item.insertText = `.${label};`;
       item.documentation = `.${label};`;
       return item;
     }
@@ -129,7 +129,7 @@ class LessCompletions {
     const insertStr = args.map(([k,v]) => k).join(', ');
 
     const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
-    item.insertText = `${label}(${insertStr});`;
+    item.insertText = `.${label}(${insertStr});`;
     item.documentation = `.${label} (${paramStr})`;
     return item;
   }
