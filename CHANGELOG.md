@@ -1,3 +1,12 @@
+## [0.0.7](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.6...v0.0.7) (2020-06-04)
+
+
+### Performance Improvements
+
+* 优化less mixin提示 ([5705842](https://github.com/moesuiga/vscode-less-variable-helper/commit/5705842119a5751283f385c56b303a9db7271e66))
+
+
+
 ## [0.0.6](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.5...v0.0.6) (2020-05-20)
 
 
