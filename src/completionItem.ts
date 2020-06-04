@@ -98,30 +98,32 @@ class LessCompletions {
    * @param node
    */
   private _lessFunction(node: IPostCssParseNode, relativePath: string) {
-    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?$/;
-    const funcValuesReg = /(@\w+)\s*(?:\:\s*([^)@,]+))?/g;
+    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?$/;
+    const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
 
     if (
       node.type !== 'rule' ||
       !node.selector ||
       !funcReg.test(node.selector)
     ) {
+      console.log(node.type, node.selector);
       return null;
     }
-    const [, label, params] = node.selector.match(funcReg) as RegExpMatchArray;
+    const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
+    console.log('selector', node.selector, 'params', params);
 
     const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
     item.detail = relativePath;
     item.filterText = `.${label}`;
     if (!params) {
-      item.insertText = `.${label};`;
-      item.documentation = `.${label};`;
+      item.insertText = `.${label}${curveParams ? '()' : ''};`;
+      item.documentation = `.${label}${curveParams ? '()' : ''};`;
       return item;
     }
 
     let matches: RegExpExecArray | null;
     const args = [];
-    while (matches = funcValuesReg.exec(node.selector)) {
+    while (matches = funcValuesReg.exec(params)) {
       const [, name, value] = matches;
       args.push([name, value]);
     }
