@@ -1,4 +1,13 @@
-## 0.0.8 (2020-11-14)
+## [0.0.9](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.8...v0.0.9) (2020-11-14)
+
+
+### Bug Fixes
+
+* 修复非顶层文件别名路径错误 ([9b1c6c9](https://github.com/moesuiga/vscode-less-variable-helper/commit/9b1c6c95ef6dea5222481772a5e06a0848fd3b8a))
+
+
+
+## [0.0.8](https://github.com/moesuiga/vscode-less-variable-helper/compare/f121f4a376de3b715f367982ab68022159a87458...v0.0.8) (2020-11-14)
 
 
 ### Bug Fixes
