@@ -45,43 +45,39 @@ class LessCompletions {
     if (!currentRootNode?.nodes) {
       return [];
     }
-    const dirPath = dirname(filePath);
     const importFiles = currentRootNode.nodes
       .reduce((files, node) => {
         if (node.type === 'atrule' && node.name === 'import' && node.params) {
           const matchArray = /(['"])([^'"]+)\1/.exec(node.params);
           if (matchArray) {
-            const importFile = this.getImportFileByAlias(filePath, matchArray[2]);
+            const importFile = this.getAbsPathByAlias(filePath, matchArray[2]);
 
             files.push(importFile);
           }
         }
         return files;
       }, [] as string[])
-      .filter((file) => !!file)
-      .map((file) => {
-        if (isAbsolute(file)) {
-          return file;
-        }
-        return join(dirPath, file);
-      });
+      .filter((file) => !!file);
 
     return importFiles;
   }
 
   /**
-   * 查找别名替换路径
+   * 查找别名替换路径并设置为绝对路径
    * @param filePath
    * @param importFile
    */
-  private getImportFileByAlias(filePath: string, importFile: string) {
+  private getAbsPathByAlias(filePath: string, importFile: string) {
     const dirPath = dirname(filePath);
     const currentWorkSpaceFolder = workspace
       .workspaceFolders
       ?.find((folder) => dirPath.startsWith(folder.uri.fsPath));
     let aliases: Record<string, string> = {};
+
+    let fsDir = dirPath;
     if (currentWorkSpaceFolder?.uri.fsPath) {
-      const result = explorerSync.search(join(dirPath));
+      fsDir = currentWorkSpaceFolder.uri.fsPath;
+      const result = explorerSync.search(fsDir);
       if (result?.config) {
         aliases = result.config.alias;
       }
@@ -95,7 +91,7 @@ class LessCompletions {
         break;
       }
     }
-    return importFile;
+    return join(fsDir, importFile);
   }
 
   private getLessVariable(root: IPostCssParseNode, relativePath: string) {
