@@ -1,14 +1,13 @@
 import {
   ExtensionContext,
   languages,
-  workspace,
 } from 'vscode';
 import provider from './lessProvider';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
 import { readAllLessFiles } from './lessAnalysis';
 
-export function activate(context: ExtensionContext) {
+export function activate(context: ExtensionContext): void {
   log('active!');
   readAllLessFiles();
   const disposable = languages.registerCompletionItemProvider({
@@ -19,7 +18,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(disposable);
 }
 
-export function deactivate() {
+export function deactivate(): void {
   log('deactivate.');
   fileStore.clear();
 }

@@ -1,8 +1,11 @@
-import { CompletionItem, CompletionItemKind } from 'vscode';
-import * as path from 'path';
+import { CompletionItem, CompletionItemKind, workspace } from 'vscode';
+import { join, dirname, relative, isAbsolute } from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
 import { IPostCssParseNode } from './utils/parser';
+import { cosmiconfigSync } from 'cosmiconfig';
+
+const explorerSync = cosmiconfigSync('lesshelper');
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/CSS/At-rule
@@ -38,27 +41,69 @@ class LessCompletions {
     if (!fileStore.has(filePath)) {
       return [];
     }
-    const currentRootNode = fileStore.get(filePath)!;
-    const dirPath = path.dirname(filePath);
-    const importFiles = currentRootNode.nodes!
+    const currentRootNode = fileStore.get(filePath);
+    if (!currentRootNode?.nodes) {
+      return [];
+    }
+    const dirPath = dirname(filePath);
+    const importFiles = currentRootNode.nodes
       .reduce((files, node) => {
         if (node.type === 'atrule' && node.name === 'import' && node.params) {
           const matchArray = /(['"])([^'"]+)\1/.exec(node.params);
           if (matchArray) {
-            files.push(matchArray[2]);
+            const importFile = this.getImportFileByAlias(filePath, matchArray[2]);
+
+            files.push(importFile);
           }
         }
         return files;
       }, [] as string[])
       .filter((file) => !!file)
-      .map((file) => path.join(dirPath, file));
+      .map((file) => {
+        if (isAbsolute(file)) {
+          return file;
+        }
+        return join(dirPath, file);
+      });
 
     return importFiles;
   }
 
+  /**
+   * 查找别名替换路径
+   * @param filePath
+   * @param importFile
+   */
+  private getImportFileByAlias(filePath: string, importFile: string) {
+    const dirPath = dirname(filePath);
+    const currentWorkSpaceFolder = workspace
+      .workspaceFolders
+      ?.find((folder) => dirPath.startsWith(folder.uri.fsPath));
+    let aliases: Record<string, string> = {};
+    if (currentWorkSpaceFolder?.uri.fsPath) {
+      const result = explorerSync.search(join(dirPath));
+      if (result?.config) {
+        aliases = result.config.alias;
+      }
+    }
+    const aliasKeys = Object.keys(aliases);
+    const len = aliasKeys.length;
+    for (let i = 0; i < len; i++) {
+      const aliasName = aliasKeys[i];
+      if (importFile.startsWith(aliasName)) {
+        importFile = `${aliases[aliasName]}${importFile.substr(aliasName.length)}`;
+        break;
+      }
+    }
+    return importFile;
+  }
+
   private getLessVariable(root: IPostCssParseNode, relativePath: string) {
     const items: CompletionItem[] = [];
-    root.nodes!.forEach((node) => {
+    if (!root.nodes) {
+      return [];
+    }
+    root.nodes.forEach((node) => {
       const variableItem = this._lessVariable(node, relativePath);
       const funcItem = this._lessFunction(node, relativePath);
       if (variableItem) {
@@ -106,11 +151,11 @@ class LessCompletions {
       !node.selector ||
       !funcReg.test(node.selector)
     ) {
-      console.log(node.type, node.selector);
+      log(node.type, node.selector);
       return null;
     }
     const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
-    console.log('selector', node.selector, 'params', params);
+    log('selector', node.selector, 'params', params);
 
     const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
     item.detail = relativePath;
@@ -128,7 +173,7 @@ class LessCompletions {
       args.push([name, value]);
     }
 
-    const insertStr = args.map(([k,v]) => k).join(', ');
+    const insertStr = args.map(([k]) => k).join(', ');
 
     const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
     item.insertText = `.${label}(${insertStr});`;
@@ -139,13 +184,13 @@ class LessCompletions {
   collectImportFiles(filePath: string) {
     const importFiles = this.getImportFiles(filePath);
     const stores = [...fileStore.entries()];
-    const dirPath = path.dirname(filePath);
-    const items = stores.reduce((items, [file, root]) => {
+    const dirPath = dirname(filePath);
+    const items = stores.reduce((completionItems, [file, root]) => {
       if (importFiles.includes(file)) {
-        const relativePath = path.relative(dirPath, file);
-        items.push(...this.getLessVariable(root, relativePath));
+        const relativePath = relative(dirPath, file);
+        completionItems.push(...this.getLessVariable(root, relativePath));
       }
-      return items;
+      return completionItems;
     }, [] as CompletionItem[]);
     return items;
   }

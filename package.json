@@ -19,7 +19,6 @@
     "watch": "tsc -watch -p ./",
     "pretest": "yarn run compile",
     "test": "node ./out/test/runTest.js",
-    "lint": "tslint --fix -p tsconfig.json",
     "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
   },
   "devDependencies": {
@@ -27,14 +26,25 @@
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.11.7",
     "@types/vscode": "^1.41.0",
+    "@typescript-eslint/eslint-plugin": "^4.7.0",
+    "@typescript-eslint/parser": "^4.7.0",
     "conventional-changelog-cli": "2.1.1",
+    "eslint": "^7.13.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-friendly-formatter": "^4.0.1",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-import-resolver-typescript": "^2.3.0",
+    "eslint-plugin-babel": "^5.3.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-promise": "^4.2.1",
     "glob": "^7.1.5",
     "mocha": "6.2.3",
-    "tslint": "^5.20.0",
     "typescript": "^3.6.4",
     "vscode-test": "^1.2.2"
   },
   "dependencies": {
+    "cosmiconfig": "^7.0.0",
     "postcss": "^7.0.24",
     "postcss-less": "^3.1.4",
     "postcss-safe-parser": "^4.0.1"
