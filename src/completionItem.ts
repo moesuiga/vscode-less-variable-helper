@@ -84,14 +84,16 @@ class LessCompletions {
     }
     const aliasKeys = Object.keys(aliases);
     const len = aliasKeys.length;
+    let isAliasPath = false;
     for (let i = 0; i < len; i++) {
       const aliasName = aliasKeys[i];
       if (importFile.startsWith(aliasName)) {
+        isAliasPath = true;
         importFile = `${aliases[aliasName]}${importFile.substr(aliasName.length)}`;
         break;
       }
     }
-    return join(fsDir, importFile);
+    return join(isAliasPath ? fsDir : dirPath, importFile);
   }
 
   private getLessVariable(root: IPostCssParseNode, relativePath: string) {
@@ -179,6 +181,7 @@ class LessCompletions {
 
   collectImportFiles(filePath: string) {
     const importFiles = this.getImportFiles(filePath);
+    log('importFiles', importFiles);
     const stores = [...fileStore.entries()];
     const dirPath = dirname(filePath);
     const items = stores.reduce((completionItems, [file, root]) => {
