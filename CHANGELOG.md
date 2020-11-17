@@ -1,3 +1,12 @@
+## [0.0.10](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.9...v0.0.10) (2020-11-17)
+
+
+### Bug Fixes
+
+* **path:** 修复别名与非别名路径匹配不同 ([8178724](https://github.com/moesuiga/vscode-less-variable-helper/commit/817872446f6f238c18bb4224e01cfe78d950a08d))
+
+
+
 ## [0.0.9](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.8...v0.0.9) (2020-11-14)
 
 
