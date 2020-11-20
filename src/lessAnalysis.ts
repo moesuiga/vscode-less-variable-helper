@@ -55,7 +55,10 @@ export function readAllLessFiles(): void {
     storeCompletionItem(uri.fsPath);
   });
   fileWatcher.onDidDelete((uri) => {
-    storeCompletionItem(uri.fsPath);
+    const { fsPath } = uri;
+    if (isLessFile(fsPath) && fileStore.has(fsPath)) {
+      fileStore.delete(fsPath);
+    }
   });
 
   workspace.findFiles(glob).then((uris) => {
