@@ -4,7 +4,6 @@ import { error, log } from './log';
 
 const postcss = require('postcss');
 const syntax = require('postcss-less');
-const safe = require('postcss-safe-parser');
 
 interface IAnyObject {
   [key: string]: any;
@@ -49,7 +48,6 @@ export async function parser(filePath: string): Promise<IPostCssParseNode | void
   return postcss()
     .process(data, {
       syntax,
-      parser: safe,
       from: filePath,
     }).then((output: any) => {
       return output.root;
