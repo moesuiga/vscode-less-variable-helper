@@ -1,9 +1,10 @@
 import * as fs from 'fs';
-import { parser, IPostCssParseNode } from './parser';
+import { parser } from './parser';
 import { error } from './log';
+import postcss = require('postcss');
 
 class FileStore {
-  private _store = new Map<string, IPostCssParseNode>();
+  private _store = new Map<string, postcss.Root>();
 
   get size() {
     return this._store.size;

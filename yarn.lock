@@ -109,6 +109,13 @@
   resolved "https://registry.npm.taobao.org/@types/parse-json/download/@types/parse-json-4.0.0.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40types%2Fparse-json%2Fdownload%2F%40types%2Fparse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha1-L4u0QUNNFjs1+4/9zNcTiSf/uMA=
 
+"@types/postcss-less@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.npm.taobao.org/@types/postcss-less/download/@types/postcss-less-3.1.1.tgz#8fb71e61156950822f3cbb0f8ce563ee64019fcb"
+  integrity sha1-j7ceYRVpUIIvPLsPjOVj7mQBn8s=
+  dependencies:
+    postcss "^7.0.32"
+
 "@types/vscode@^1.41.0":
   version "1.41.0"
   resolved "https://registry.npm.taobao.org/@types/vscode/download/@types/vscode-1.41.0.tgz#b0d75920220f84e07093285e59180c0f11d336cd"
@@ -2239,19 +2246,21 @@ pkg-dir@^2.0.0:
 
 postcss-less@^3.1.4:
   version "3.1.4"
-  resolved "https://registry.npm.taobao.org/postcss-less/download/postcss-less-3.1.4.tgz#369f58642b5928ef898ffbc1a6e93c958304c5ad"
+  resolved "https://registry.npm.taobao.org/postcss-less/download/postcss-less-3.1.4.tgz?cache=0&sync_timestamp=1603292389904&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fpostcss-less%2Fdownload%2Fpostcss-less-3.1.4.tgz#369f58642b5928ef898ffbc1a6e93c958304c5ad"
   integrity sha1-Np9YZCtZKO+Jj/vBpuk8lYMExa0=
   dependencies:
     postcss "^7.0.14"
 
-postcss-safe-parser@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.npm.taobao.org/postcss-safe-parser/download/postcss-safe-parser-4.0.1.tgz#8756d9e4c36fdce2c72b091bbc8ca176ab1fcdea"
-  integrity sha1-h1bZ5MNv3OLHKwkbvIyhdqsfzeo=
+postcss@^7.0.14, postcss@^7.0.32:
+  version "7.0.35"
+  resolved "https://registry.npm.taobao.org/postcss/download/postcss-7.0.35.tgz?cache=0&sync_timestamp=1605799739266&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fpostcss%2Fdownload%2Fpostcss-7.0.35.tgz#d2be00b998f7f211d8a276974079f2e92b970e24"
+  integrity sha1-0r4AuZj38hHYonaXQHny6SuXDiQ=
   dependencies:
-    postcss "^7.0.0"
+    chalk "^2.4.2"
+    source-map "^0.6.1"
+    supports-color "^6.1.0"
 
-postcss@^7.0.0, postcss@^7.0.14, postcss@^7.0.24:
+postcss@^7.0.24:
   version "7.0.24"
   resolved "https://registry.npm.taobao.org/postcss/download/postcss-7.0.24.tgz#972c3c5be431b32e40caefe6c81b5a19117704c2"
   integrity sha1-lyw8W+Qxsy5Ayu/myBtaGRF3BMI=

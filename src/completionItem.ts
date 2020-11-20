@@ -1,9 +1,9 @@
-import { CompletionItem, CompletionItemKind, workspace } from 'vscode';
-import { join, dirname, relative, isAbsolute } from 'path';
+import { CompletionItem, CompletionItemKind, MarkdownString, workspace } from 'vscode';
+import { join, dirname, relative } from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
-import { IPostCssParseNode } from './utils/parser';
 import { cosmiconfigSync } from 'cosmiconfig';
+import postcss = require('postcss');
 
 const explorerSync = cosmiconfigSync('lesshelper');
 
@@ -96,7 +96,7 @@ class LessCompletions {
     return join(isAliasPath ? fsDir : dirPath, importFile);
   }
 
-  private getLessVariable(root: IPostCssParseNode, relativePath: string) {
+  private getLessVariable(root: postcss.Root, relativePath: string) {
     const items: CompletionItem[] = [];
     if (!root.nodes) {
       return [];
@@ -114,7 +114,7 @@ class LessCompletions {
     return items;
   }
 
-  private _lessVariable(node: IPostCssParseNode, relativePath: string) {
+  private _lessVariable(node: postcss.ChildNode, relativePath: string) {
     if (
       node.type !== 'atrule' ||
       !node.name ||
@@ -130,7 +130,9 @@ class LessCompletions {
     item.detail = relativePath;
     item.insertText = `@${label}`;
     item.filterText = `@${label}`;
-    item.documentation = node.params;
+    item.preselect = true;
+
+    item.documentation = this._jointDocAndComment(node.params, node);
     return item;
   }
 
@@ -140,27 +142,29 @@ class LessCompletions {
    * like `.ellipsis(@width)`
    * @param node
    */
-  private _lessFunction(node: IPostCssParseNode, relativePath: string) {
-    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?$/;
+  private _lessFunction(node: postcss.ChildNode, relativePath: string) {
+    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
     const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
 
+    // log(node.type, node);
     if (
       node.type !== 'rule' ||
       !node.selector ||
       !funcReg.test(node.selector)
     ) {
-      log(node.type, node.selector);
       return null;
     }
     const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
-    log('selector', node.selector, 'params', params);
+    // log('selector', node.selector, 'params', params);
 
     const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
     item.detail = relativePath;
     item.filterText = `.${label}`;
+    item.preselect = true;
     if (!params) {
-      item.insertText = `.${label}${curveParams ? '()' : ''};`;
-      item.documentation = `.${label}${curveParams ? '()' : ''};`;
+      const text = `.${label}${curveParams ? '()' : ''}`;
+      item.insertText = `${text};`;
+      item.documentation = this._jointDocAndComment(text, node);
       return item;
     }
 
@@ -175,8 +179,43 @@ class LessCompletions {
 
     const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
     item.insertText = `.${label}(${insertStr});`;
-    item.documentation = `.${label} (${paramStr})`;
+
+    item.documentation = this._jointDocAndComment(`.${label} (${paramStr})`, node);
     return item;
+  }
+
+  /**
+   * 拼接出 mixin 的完整内容
+   * @param text mixin 的选择器
+   * @param node mixin 的节点
+   */
+  private _jointDocAndComment(text: string, node: postcss.Rule | postcss.AtRule) {
+    if (node.type === 'rule' && node.nodes?.length) {
+      text += ' {\n';
+      for (let i = 0; i < node.nodes.length; i++) {
+        const childNode = node.nodes[i];
+        if (childNode.type === 'decl') {
+          text += `  ${childNode.prop}: ${childNode.value};\n`;
+        }
+      }
+      text += '}';
+    }
+
+    let mdStr =
+      '```less\n'
+      + text
+      + '\n```';
+    let currentNode: postcss.ChildNode = node;
+    let prevNode: void | postcss.Rule | postcss.AtRule | postcss.Declaration | postcss.Comment;
+    while (prevNode = currentNode.prev()) {
+      if (prevNode.type !== 'comment') {
+        break;
+      }
+
+      mdStr = `${prevNode.text}\n\n${mdStr}`;
+      currentNode = prevNode;
+    }
+    return new MarkdownString(mdStr);
   }
 
   collectImportFiles(filePath: string) {
