@@ -2,10 +2,12 @@ import { CompletionItem, CompletionItemKind, MarkdownString, workspace } from 'v
 import { join, dirname, relative } from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
-import { cosmiconfigSync } from 'cosmiconfig';
 import postcss = require('postcss');
+import postcssLess = require('postcss-less');
+import { search } from './config';
+import { isColor } from './utils/color';
 
-const explorerSync = cosmiconfigSync('lesshelper');
+type LessChildNode = postcss.ChildNode | postcssLess.AtRule | postcssLess.Rule | postcssLess.Comment | postcssLess.Declaration;
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/CSS/At-rule
@@ -77,9 +79,9 @@ class LessCompletions {
     let fsDir = dirPath;
     if (currentWorkSpaceFolder?.uri.fsPath) {
       fsDir = currentWorkSpaceFolder.uri.fsPath;
-      const result = explorerSync.search(fsDir);
-      if (result?.config) {
-        aliases = result.config.alias;
+      const config = search(fsDir);
+      if (config?.alias) {
+        aliases = config.alias;
       }
     }
     const aliasKeys = Object.keys(aliases);
@@ -101,7 +103,7 @@ class LessCompletions {
     if (!root.nodes) {
       return [];
     }
-    root.nodes.forEach((node) => {
+    root.walk((node, index) => {
       const variableItem = this._lessVariable(node, relativePath);
       const funcItem = this._lessFunction(node, relativePath);
       if (variableItem) {
@@ -110,11 +112,13 @@ class LessCompletions {
       if (funcItem) {
         items.push(funcItem);
       }
-    });
+    })
+    // log('after walk', items.length, items)
+
     return items;
   }
 
-  private _lessVariable(node: postcss.ChildNode, relativePath: string) {
+  private _lessVariable(node: LessChildNode, relativePath: string) {
     if (
       node.type !== 'atrule' ||
       !node.name ||
@@ -126,13 +130,30 @@ class LessCompletions {
     if (label.slice(-1) === ':') {
       label = label.slice(0, -1);
     }
-    const item = new CompletionItem(`@${label}`, CompletionItemKind.Variable);
+
+    const isMixinAtRule = !!(node as postcssLess.MixinAtRule).mixin;
+    let valueIsColor = false;
+    let value = node.params;
+    if (isMixinAtRule) {
+      label = `${node.name}${node.params}`;
+      value = label;
+    } else {
+      label = `@${label}`;
+      valueIsColor = isColor(value)
+    }
+
+    const item = new CompletionItem(label, isMixinAtRule ? CompletionItemKind.Function : CompletionItemKind.Variable);
+
+    if (valueIsColor) {
+      item.kind = CompletionItemKind.Color;
+    }
     item.detail = relativePath;
-    item.insertText = `@${label}`;
-    item.filterText = `@${label}`;
+    item.insertText = `${label};`;
+    item.filterText = label;
     item.preselect = true;
 
-    item.documentation = this._jointDocAndComment(node.params, node);
+    item.documentation = this._jointDocAndComment(value, node as postcssLess.AtRule);
+
     return item;
   }
 
@@ -142,9 +163,9 @@ class LessCompletions {
    * like `.ellipsis(@width)`
    * @param node
    */
-  private _lessFunction(node: postcss.ChildNode, relativePath: string) {
-    const funcReg = /^\.([a-zA-Z0-9\-_]+)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
-    const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
+  private _lessFunction(node: LessChildNode, relativePath: string) {
+    const funcReg = /^[\.\&]([a-zA-Z_][a-zA-Z0-9\-_]*)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
+    // const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
 
     // log(node.type, node);
     if (
@@ -154,33 +175,28 @@ class LessCompletions {
     ) {
       return null;
     }
-    const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
+    // const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
+    let [selector] = node.selector.split('when');
     // log('selector', node.selector, 'params', params);
 
-    const item = new CompletionItem(`.${label}`, CompletionItemKind.Function);
+    while (selector.startsWith('&')) {
+      log('parent type => ', node.parent.type)
+      selector = `${(node.parent as postcssLess.Rule).selector}${selector.slice(1)}`
+    }
+    const item = new CompletionItem(selector, CompletionItemKind.Function);
+
+    let insertText = selector;
+    // like `.class::before` => `.class`
+    if (selector.indexOf(')') === -1 && selector.indexOf(':') > 0) {
+      insertText = selector.slice(0, selector.indexOf(':'));
+    }
     item.detail = relativePath;
-    item.filterText = `.${label}`;
+    item.filterText = insertText;
+    item.label = insertText;
+    item.insertText = `${insertText};`;
     item.preselect = true;
-    if (!params) {
-      const text = `.${label}${curveParams ? '()' : ''}`;
-      item.insertText = `${text};`;
-      item.documentation = this._jointDocAndComment(text, node);
-      return item;
-    }
 
-    let matches: RegExpExecArray | null;
-    const args = [];
-    while (matches = funcValuesReg.exec(params)) {
-      const [, name, value] = matches;
-      args.push([name, value]);
-    }
-
-    const insertStr = args.map(([k]) => k).join(', ');
-
-    const paramStr = args.map(([k,v]) => `${v ? `${k}: ${v}` : `${k}`}`).join(', ');
-    item.insertText = `.${label}(${insertStr});`;
-
-    item.documentation = this._jointDocAndComment(`.${label} (${paramStr})`, node);
+    item.documentation = this._jointDocAndComment(node.toString(), node as postcssLess.Rule);
     return item;
   }
 
@@ -189,24 +205,13 @@ class LessCompletions {
    * @param text mixin 的选择器
    * @param node mixin 的节点
    */
-  private _jointDocAndComment(text: string, node: postcss.Rule | postcss.AtRule) {
-    if (node.type === 'rule' && node.nodes?.length) {
-      text += ' {\n';
-      for (let i = 0; i < node.nodes.length; i++) {
-        const childNode = node.nodes[i];
-        if (childNode.type === 'decl') {
-          text += `  ${childNode.prop}: ${childNode.value};\n`;
-        }
-      }
-      text += '}';
-    }
-
+  private _jointDocAndComment(text: string, node: postcssLess.Rule | postcssLess.AtRule) {
     let mdStr =
       '```less\n'
       + text
       + '\n```';
-    let currentNode: postcss.ChildNode = node;
-    let prevNode: void | postcss.Rule | postcss.AtRule | postcss.Declaration | postcss.Comment;
+    let currentNode: postcss.ChildNode = node as postcss.Rule | postcss.AtRule;
+    let prevNode: void | postcss.ChildNode;
     while (prevNode = currentNode.prev()) {
       if (prevNode.type !== 'comment') {
         break;
@@ -227,6 +232,10 @@ class LessCompletions {
       if (importFiles.includes(file)) {
         const relativePath = relative(dirPath, file);
         completionItems.push(...this.getLessVariable(root, relativePath));
+      }
+      // 当前文件支持
+      else if (file === filePath) {
+        completionItems.push(...this.getLessVariable(root, 'CURRENT'));
       }
       return completionItems;
     }, [] as CompletionItem[]);

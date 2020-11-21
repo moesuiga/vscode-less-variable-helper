@@ -1,6 +1,8 @@
-import { workspace } from 'vscode';
+import { Disposable, workspace } from 'vscode';
 import * as path from 'path';
 import { fileStore } from './utils/store';
+import { getRCConfig } from './config';
+import { log } from './utils/log';
 
 /**
  * Return a file extname without dot (`.`)
@@ -42,10 +44,21 @@ function storeCompletionItem(filePath: string) {
   }
 }
 
-export function readAllLessFiles(): void {
+export function readAllLessFiles(disposables: Disposable[]) {
   const lessAssociations = getLessFileAssociations();
   const ext = lessAssociations.length === 1 ? lessAssociations[0] : `{${lessAssociations.join(',')}}`;
-  const glob = `**/*.${ext}`;
+
+  // .lesshelperrc 配置
+  const rcConf = getRCConfig();
+  // 要监视的 less 文件 glob 路径
+  let glob = rcConf?.glob || `**/*.${ext}`;
+  if (glob.startsWith('./')) {
+    glob = glob.replace(/^\.\//, '');
+  }
+  // 要排除查找的文件 glob
+  const exclude = rcConf?.exclude || '**/node_modules/**';
+  // 最多查找的结果数量
+  const maxResults = rcConf?.maxResults;
 
   const fileWatcher = workspace.createFileSystemWatcher(glob);
   fileWatcher.onDidCreate((uri) => {
@@ -53,7 +66,7 @@ export function readAllLessFiles(): void {
   });
   fileWatcher.onDidChange((uri) => {
     storeCompletionItem(uri.fsPath);
-  });
+  }, null, disposables);
   fileWatcher.onDidDelete((uri) => {
     const { fsPath } = uri;
     if (isLessFile(fsPath) && fileStore.has(fsPath)) {
@@ -61,7 +74,7 @@ export function readAllLessFiles(): void {
     }
   });
 
-  workspace.findFiles(glob).then((uris) => {
+  workspace.findFiles(glob, exclude, maxResults).then((uris) => {
     uris.forEach((uri) => {
       storeCompletionItem(uri.fsPath);
     });

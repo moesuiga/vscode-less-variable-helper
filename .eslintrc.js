@@ -45,6 +45,7 @@ module.exports = {
   },
 
   rules: {
+    '@typescript-eslint/explicit-module-boundary-types': 0,
     'import/no-cycle': 0,
     'import/no-unresolved': 'error',
     'sort-imports': 0,
