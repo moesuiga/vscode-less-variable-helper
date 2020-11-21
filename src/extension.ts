@@ -1,7 +1,9 @@
 import {
   commands,
+  Disposable,
   ExtensionContext,
   languages,
+  Uri,
   window,
   workspace,
 } from 'vscode';
@@ -9,28 +11,46 @@ import provider from './lessProvider';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
 import { readAllLessFiles } from './lessAnalysis';
-import { clearRCConfig, load, search } from './config';
+import { clearRCConfig, load, search, ILessHelperRCConfig } from './config';
 
-function watchRCFile() {
+async function tipGlob(conf: null | Partial<ILessHelperRCConfig>, uri: Uri) {
+  let msg = '';
+  if (conf?.glob) {
+    const { glob } = conf;
+    const { fsPath } = uri;
+    // 相对路径 ./src/**/*.less
+    if (glob.startsWith('.')) {
+      msg = `[${fsPath}] "glob" 配置 "${glob}", 不建议用以 "." 开始的相对路径 glob, 建议使用 "**/" 开头`
+    }
+    // 绝对路径 __dirname/src/**/*.less
+    else if (glob.startsWith('/')) {
+      msg = `[${fsPath}] "glob" 配置 "${glob}", 不建议用绝对路径的 glob`
+    }
+    else if (!glob.startsWith('**')) {
+      msg = `[${fsPath}] "glob" 配置 "${glob}", 建议改为 "**/${glob}"`
+    }
+  }
+  if (!msg) {
+    return;
+  }
+  const actionFix = '去修改';
+  const value = await window.showInformationMessage(msg, actionFix);
+
+  if (value === actionFix) {
+    commands.executeCommand('vscode.openFolder', uri);
+  }
+}
+
+/**
+ * 监听 .lesshelperrc 等rc配置文件
+ * @param disposables
+ */
+function watchRCFile(disposables: Disposable[]) {
   workspace.findFiles('**/.lesshelperrc*', '**/node_modules/**', 1)
     .then((files) => {
       if (files[0]?.fsPath) {
-        const [{ fsPath }] = files;
-        const conf = load(fsPath, true);
-        // 相对路径 ./src/**/*.less 替换成 src/**/*.less
-        if (conf?.glob && conf.glob.startsWith('./')) {
-          const actionFix = '去修改';
-          window.showWarningMessage(
-            `文件 [${fsPath}] 中 "glob": "${conf.glob}" 配置不要用以 . 开始的相对路径`,
-            actionFix
-          ).then(async (value) => {
-            if (value === actionFix) {
-              log(fsPath);
-              commands.executeCommand('vscode.openFolder', files[0]);
-            }
-          })
-          conf.glob = conf.glob.replace(/^\.\//, '');
-        }
+        const conf = load(files[0].fsPath, true);
+        tipGlob(conf, files[0]);
       }
     });
   const fileWatcher = workspace.createFileSystemWatcher('**/.lesshelperrc*');
@@ -38,7 +58,9 @@ function watchRCFile() {
     load(uri.fsPath, true);
   });
   fileWatcher.onDidChange((uri) => {
-    load(uri.fsPath, true);
+    const conf = load(uri.fsPath, true);
+    tipGlob(conf, uri);
+    readAllLessFiles(disposables);
   });
   fileWatcher.onDidDelete((uri) => {
     clearRCConfig();
@@ -58,8 +80,8 @@ export function activate(context: ExtensionContext): void {
   }
 
   context.subscriptions.push(disposable);
-  watchRCFile();
-  readAllLessFiles(context.subscriptions);
+  watchRCFile([disposable]);
+  readAllLessFiles([disposable]);
 }
 
 export function deactivate(): void {

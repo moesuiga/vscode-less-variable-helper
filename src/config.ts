@@ -2,7 +2,7 @@
 import { cosmiconfigSync } from 'cosmiconfig';
 import { log } from './utils/log';
 
-interface ILessHelperRCConfig {
+export interface ILessHelperRCConfig {
   alias: Record<string, string>;
   glob: string;
   exclude: string;

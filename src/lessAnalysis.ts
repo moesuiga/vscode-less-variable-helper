@@ -1,4 +1,4 @@
-import { Disposable, workspace } from 'vscode';
+import { Disposable, FileSystemWatcher, workspace } from 'vscode';
 import * as path from 'path';
 import { fileStore } from './utils/store';
 import { getRCConfig } from './config';
@@ -44,7 +44,12 @@ function storeCompletionItem(filePath: string) {
   }
 }
 
+let fileWatcher: null | FileSystemWatcher = null;
+
 export function readAllLessFiles(disposables: Disposable[]) {
+  if (fileWatcher) {
+    fileWatcher.dispose();
+  }
   const lessAssociations = getLessFileAssociations();
   const ext = lessAssociations.length === 1 ? lessAssociations[0] : `{${lessAssociations.join(',')}}`;
 
@@ -60,11 +65,12 @@ export function readAllLessFiles(disposables: Disposable[]) {
   // 最多查找的结果数量
   const maxResults = rcConf?.maxResults;
 
-  const fileWatcher = workspace.createFileSystemWatcher(glob);
+  fileWatcher = workspace.createFileSystemWatcher(glob);
   fileWatcher.onDidCreate((uri) => {
     storeCompletionItem(uri.fsPath);
   });
   fileWatcher.onDidChange((uri) => {
+    log('change => ', uri.fsPath);
     storeCompletionItem(uri.fsPath);
   }, null, disposables);
   fileWatcher.onDidDelete((uri) => {
