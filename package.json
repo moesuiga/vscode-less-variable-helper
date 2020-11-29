@@ -2,7 +2,7 @@
   "name": "less-variable-helper",
   "displayName": "less-variable-helper",
   "description": "引入less文件的变量提示帮助",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "icon": "static/icon.png",
   "engines": {
     "vscode": "^1.41.0"
