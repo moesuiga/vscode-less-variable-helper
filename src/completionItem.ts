@@ -2,8 +2,8 @@ import { CompletionItem, CompletionItemKind, MarkdownString, workspace } from 'v
 import { join, dirname, relative } from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
+import * as postcssLess from 'postcss-less';
 import postcss = require('postcss');
-import postcssLess = require('postcss-less');
 import { search } from './config';
 import { isColor } from './utils/color';
 
@@ -36,6 +36,8 @@ const primitiveAtRules = [
   'stylistic',
   'styleset',
   'character-variant',
+  'property',
+  'layer',
 ];
 
 class LessCompletions {
