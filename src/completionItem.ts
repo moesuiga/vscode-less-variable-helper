@@ -40,6 +40,8 @@ const primitiveAtRules = [
   'layer',
 ];
 
+const CURRENT_PATH = 'CURRENT';
+
 class LessCompletions {
   private getImportFiles(filePath: string) {
     if (!fileStore.has(filePath)) {
@@ -100,14 +102,14 @@ class LessCompletions {
     return join(isAliasPath ? fsDir : dirPath, importFile);
   }
 
-  private getLessVariable(root: postcss.Root, relativePath: string) {
+  private getLessVariable({ root, relativePath }: { root: postcss.Root, relativePath: string }) {
     const items: CompletionItem[] = [];
     if (!root.nodes) {
       return [];
     }
     root.walk((node, index) => {
-      const variableItem = this._lessVariable(node, relativePath);
-      const funcItem = this._lessFunction(node, relativePath);
+      const variableItem = this._lessVariable({ node, items, relativePath });
+      const funcItem = this._lessFunction({ node, relativePath });
       if (variableItem) {
         items.push(variableItem);
       }
@@ -120,7 +122,7 @@ class LessCompletions {
     return items;
   }
 
-  private _lessVariable(node: LessChildNode, relativePath: string) {
+  private _lessVariable({ node, items, relativePath }: { node: LessChildNode, items: CompletionItem[], relativePath: string }) {
     if (
       node.type !== 'atrule' ||
       !node.name ||
@@ -136,11 +138,21 @@ class LessCompletions {
     const isMixinAtRule = !!(node as postcssLess.MixinAtRule).mixin;
     let valueIsColor = false;
     let value = node.params;
+    let text = '';
     if (isMixinAtRule) {
       label = `${node.name}${node.params}`;
       value = label;
     } else {
       label = `@${label}`;
+      // 变量的值是另一个变量
+      while (/^@[a-zA-Z0-9_\-]+$/.test(value)) {
+        const related = items.find((item) => item.filterText === value);
+        if (related?.detail) {
+          log('find the value related completion item', related);
+          text += `${value} // => ${related.detail};\n`;
+          value = related.detail;
+        }
+      }
       valueIsColor = isColor(value)
     }
 
@@ -149,12 +161,13 @@ class LessCompletions {
     if (valueIsColor) {
       item.kind = CompletionItemKind.Color;
     }
-    item.detail = relativePath;
+    // item.detail = valueIsColor ? value : relativePath;
+    item.detail = value;
     item.insertText = `${label};`;
     item.filterText = label;
     item.preselect = true;
 
-    item.documentation = this._jointDocAndComment(value, node as postcssLess.AtRule);
+    item.documentation = this._jointDocAndComment({ text: text || value, node: node as postcssLess.AtRule, relativePath });
 
     return item;
   }
@@ -165,7 +178,7 @@ class LessCompletions {
    * like `.ellipsis(@width)`
    * @param node
    */
-  private _lessFunction(node: LessChildNode, relativePath: string) {
+  private _lessFunction({ node, relativePath }: { node: LessChildNode, relativePath: string }) {
     const funcReg = /^[\.\&]([a-zA-Z_][a-zA-Z0-9\-_]*)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
     // const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
 
@@ -192,22 +205,25 @@ class LessCompletions {
     if (selector.indexOf(')') === -1 && selector.indexOf(':') > 0) {
       insertText = selector.slice(0, selector.indexOf(':'));
     }
-    item.detail = relativePath;
+    // item.detail = relativePath;
+    item.detail = selector;
     item.filterText = insertText;
     item.label = insertText;
     item.insertText = `${insertText};`;
     item.preselect = true;
 
-    item.documentation = this._jointDocAndComment(node.toString(), node as postcssLess.Rule);
+    item.documentation = this._jointDocAndComment({ text: node.toString(), node: node as postcssLess.Rule, relativePath });
     return item;
   }
 
   /**
    * 拼接出 mixin 的完整内容
-   * @param text mixin 的选择器
-   * @param node mixin 的节点
+   * @param {object} param0
+   * @param {string} param0.text mixin 的选择器
+   * @param param0.node mixin 的节点
+   * @param {string} param0.relativePath 相对路径
    */
-  private _jointDocAndComment(text: string, node: postcssLess.Rule | postcssLess.AtRule) {
+  private _jointDocAndComment({ text, node, relativePath }: { text: string, node: postcssLess.Rule | postcssLess.AtRule, relativePath: string }) {
     let mdStr =
       '```less\n'
       + text
@@ -222,6 +238,7 @@ class LessCompletions {
       mdStr = `${prevNode.text}\n\n${mdStr}`;
       currentNode = prevNode;
     }
+    mdStr = `${relativePath}\n\n${mdStr}`;
     return new MarkdownString(mdStr);
   }
 
@@ -233,11 +250,11 @@ class LessCompletions {
     const items = stores.reduce((completionItems, [file, root]) => {
       if (importFiles.includes(file)) {
         const relativePath = relative(dirPath, file);
-        completionItems.push(...this.getLessVariable(root, relativePath));
+        completionItems.push(...this.getLessVariable({ root, relativePath }));
       }
       // 当前文件支持
       else if (file === filePath) {
-        completionItems.push(...this.getLessVariable(root, 'CURRENT'));
+        completionItems.push(...this.getLessVariable({ root, relativePath: CURRENT_PATH }));
       }
       return completionItems;
     }, [] as CompletionItem[]);
