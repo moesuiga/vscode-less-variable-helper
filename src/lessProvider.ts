@@ -4,8 +4,6 @@ import {
   Position,
   CancellationToken,
   CompletionContext,
-  CompletionItem,
-  CompletionItemKind
 } from 'vscode';
 
 import { lessCompletion } from './completionItem';
@@ -14,8 +12,8 @@ import { log } from './utils/log';
 class LessProvider implements CompletionItemProvider {
   async provideCompletionItems(textDoc: TextDocument, position: Position, token: CancellationToken, context: CompletionContext) {
     const { languageId } = textDoc;
-    if (!(languageId === 'less')) {
-      log(`file [${textDoc.fileName}] is not less file`);
+    if (!['less', 'vue'].includes(languageId)) {
+      log(`file [${textDoc.fileName}] is not support type`);
       return [];
     }
 

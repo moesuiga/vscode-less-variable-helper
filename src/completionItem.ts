@@ -3,9 +3,10 @@ import { join, dirname, relative } from 'path';
 import { fileStore } from './utils/store';
 import { log } from './utils/log';
 import * as postcssLess from 'postcss-less';
-import postcss = require('postcss');
+import * as postcss from 'postcss';
 import { search } from './config';
 import { isColor } from './utils/color';
+import { isLessFile } from './utils/filetype';
 
 type LessChildNode = postcss.ChildNode | postcssLess.AtRule | postcssLess.Rule | postcssLess.Comment | postcssLess.Declaration;
 
@@ -102,14 +103,14 @@ class LessCompletions {
     return join(isAliasPath ? fsDir : dirPath, importFile);
   }
 
-  private getLessVariable({ root, relativePath }: { root: postcss.Root, relativePath: string }) {
+  private getLessVariable({ root, relativePath, curFile }: { root: postcss.Root, relativePath: string, curFile: string }) {
     const items: CompletionItem[] = [];
     if (!root.nodes) {
       return [];
     }
     root.walk((node, index) => {
-      const variableItem = this._lessVariable({ node, items, relativePath });
-      const funcItem = this._lessFunction({ node, relativePath });
+      const variableItem = this._lessVariable({ node, items, relativePath, curFile });
+      const funcItem = this._lessFunction({ node, relativePath, curFile });
       if (variableItem) {
         items.push(variableItem);
       }
@@ -122,7 +123,7 @@ class LessCompletions {
     return items;
   }
 
-  private _lessVariable({ node, items, relativePath }: { node: LessChildNode, items: CompletionItem[], relativePath: string }) {
+  private _lessVariable({ node, items, relativePath, curFile }: { node: LessChildNode, items: CompletionItem[], relativePath: string, curFile: string }) {
     if (
       node.type !== 'atrule' ||
       !node.name ||
@@ -146,7 +147,7 @@ class LessCompletions {
       label = `@${label}`;
       // 变量的值是另一个变量
       while (/^@[a-zA-Z0-9_\-]+$/.test(value)) {
-        const related = items.find((item) => item.filterText === value);
+        const related = items.find((item) => item.label === value);
         if (related?.detail) {
           log('find the value related completion item', related);
           text += `${value} // => ${related.detail};\n`;
@@ -162,9 +163,14 @@ class LessCompletions {
       item.kind = CompletionItemKind.Color;
     }
     // item.detail = valueIsColor ? value : relativePath;
+    const isCurrentLessFile = isLessFile(curFile);
+    // 在 less 文件中，`@name` 会正常的插入 `@name`，而在 vue 文件中会多出首个 `@` 符号
+    // 所以如果是在 Vue 文件中，插入内容去掉开头的 `@` 符号
+    const insertText = isCurrentLessFile ? label : label.slice(1);
+    item.label = label;
     item.detail = value;
-    item.insertText = `${label};`;
-    item.filterText = label;
+    item.insertText = `${insertText};`;
+    item.filterText = insertText;
     item.preselect = true;
 
     item.documentation = this._jointDocAndComment({ text: text || value, node: node as postcssLess.AtRule, relativePath });
@@ -178,8 +184,8 @@ class LessCompletions {
    * like `.ellipsis(@width)`
    * @param node
    */
-  private _lessFunction({ node, relativePath }: { node: LessChildNode, relativePath: string }) {
-    const funcReg = /^[\.\&]([a-zA-Z_][a-zA-Z0-9\-_]*)\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
+  private _lessFunction({ node, relativePath, curFile }: { node: LessChildNode, relativePath: string, curFile: string }) {
+    const funcReg = /^(\.([a-zA-Z_][a-zA-Z0-9\-_]*)|\&([a-zA-Z0-9\-_]+))\s*(\(((?:\s*@[a-zA-Z0-9\-_]+\s*(?:\:\s*[^@]+)?,?)*)\))?(?:\s*when\s*(?:not\s*)?\(.+\))?(?:\:{1,2}\w+)?$/;
     // const funcValuesReg = /(@\w+)\s*(?:\:\s*([^(,]+(?:\([^)]+\))?[^,]*))?/g;
 
     // log(node.type, node);
@@ -200,15 +206,21 @@ class LessCompletions {
     }
     const item = new CompletionItem(selector, CompletionItemKind.Function);
 
-    let insertText = selector;
+    let label = selector;
     // like `.class::before` => `.class`
     if (selector.indexOf(')') === -1 && selector.indexOf(':') > 0) {
-      insertText = selector.slice(0, selector.indexOf(':'));
+      label = selector.slice(0, selector.indexOf(':'));
+    }
+    const isCurrentLessFile = isLessFile(curFile);
+    let insertText = label;
+    // 如果是在 Vue 文件中，插入内容去掉开头的 `.` 符号
+    if (label.startsWith('.') && !isCurrentLessFile) {
+      insertText = label.slice(1);
     }
     // item.detail = relativePath;
     item.detail = selector;
-    item.filterText = insertText;
-    item.label = insertText;
+    item.filterText = label;
+    item.label = label;
     item.insertText = `${insertText};`;
     item.preselect = true;
 
@@ -250,11 +262,11 @@ class LessCompletions {
     const items = stores.reduce((completionItems, [file, root]) => {
       if (importFiles.includes(file)) {
         const relativePath = relative(dirPath, file);
-        completionItems.push(...this.getLessVariable({ root, relativePath }));
+        completionItems.push(...this.getLessVariable({ root, relativePath, curFile: filePath }));
       }
       // 当前文件支持
       else if (file === filePath) {
-        completionItems.push(...this.getLessVariable({ root, relativePath: CURRENT_PATH }));
+        completionItems.push(...this.getLessVariable({ root, relativePath: CURRENT_PATH, curFile: filePath }));
       }
       return completionItems;
     }, [] as CompletionItem[]);
