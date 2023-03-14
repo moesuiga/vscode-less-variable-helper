@@ -1,3 +1,19 @@
+## [0.0.13](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.12...v0.0.13) (2023-03-14)
+
+
+### Bug Fixes
+
+* 修复出现超出两层嵌套时无限循环 ([118d556](https://github.com/moesuiga/vscode-less-variable-helper/commit/118d5563cf223deba3ab43ac625527f827298968))
+
+
+### Features
+
+* 新增CSS原始支持的atrules ([6c94e66](https://github.com/moesuiga/vscode-less-variable-helper/commit/6c94e66882c0b31d0d1d6480f7dfb04a5801c72d))
+* 颜色变量类型展示对应色块，变量的值是另一个同文件的变量时，深入查找具体的值 ([57d6110](https://github.com/moesuiga/vscode-less-variable-helper/commit/57d6110b178aecda4a80461e4f6acb11e25c0cac))
+* 支持Vue文件中lang属性为less的style内容 ([5be82f6](https://github.com/moesuiga/vscode-less-variable-helper/commit/5be82f655ac203ea72c26c79a16f210cd9be3ff8))
+
+
+
 ## [0.0.12](https://github.com/moesuiga/vscode-less-variable-helper/compare/v0.0.11...v0.0.12) (2020-11-29)
 
 
