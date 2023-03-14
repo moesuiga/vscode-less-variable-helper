@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import { parser } from './parser';
+import { parseLess, parseVue } from './parser';
 import { error } from './log';
-import postcss = require('postcss');
+import * as postcss from 'postcss';
 
 class FileStore {
   private _store = new Map<string, postcss.Root>();
@@ -15,7 +15,17 @@ class FileStore {
       error(`${file} is not exist.`);
       return;
     }
-    const root = await parser(file);
+    const root = await parseLess(file);
+    if (root) {
+      this._store.set(file, root);
+    }
+  }
+  async setVueStyle(file: string) {
+    if (!fs.existsSync(file)) {
+      error(`${file} is not exist.`);
+      return;
+    }
+    const [root] = await parseVue(file);
     if (root) {
       this._store.set(file, root);
     }

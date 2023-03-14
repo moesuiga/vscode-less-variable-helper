@@ -69,10 +69,7 @@ function watchRCFile(disposables: Disposable[]) {
 
 export function activate(context: ExtensionContext): void {
   log('active!');
-  const disposable = languages.registerCompletionItemProvider({
-    scheme: 'file',
-    language: 'less',
-  }, provider);
+  const disposable = languages.registerCompletionItemProvider(['less', 'vue'], provider);
 
   if (window.activeTextEditor?.document.fileName) {
     const data = search(window.activeTextEditor.document.fileName);
