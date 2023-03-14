@@ -193,10 +193,10 @@ class LessCompletions {
     // const [, label, curveParams, params] = node.selector.match(funcReg) as RegExpMatchArray;
     let [selector] = node.selector.split('when');
     // log('selector', node.selector, 'params', params);
-
-    while (selector.startsWith('&')) {
-      log('parent type => ', node.parent.type)
-      selector = `${(node.parent as postcssLess.Rule).selector}${selector.slice(1)}`
+    let parent = node.parent as postcssLess.Rule | void;
+    while (selector.startsWith('&') && parent) {
+      selector = `${parent.selector}${selector.slice(1)}`
+      parent = parent.parent as postcssLess.Rule | void;
     }
     const item = new CompletionItem(selector, CompletionItemKind.Function);
 
